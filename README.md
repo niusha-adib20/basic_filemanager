@@ -1,78 +1,48 @@
-# 📁 Basic File Manager API
+# Basic File Manager API
 
-A RESTful file-management backend built with **Java 17** and **Spring Boot**. It provides endpoints for managing users and directories, uploading and downloading files, assigning directory-level access permissions, and recording file activity.
+A REST API for user-owned directories and file operations, built with **Java 17** and **Spring Boot 3.4.4**. The project uses PostgreSQL for relational data, MongoDB for activity events, and the local filesystem for uploaded file contents.
 
-## ✨ Features
+## Features
 
-- **User management:** Create, retrieve, and delete users.
-- **Directory management:** Create, list, and delete user-owned directories.
-- **File operations:** Upload files to a directory, list directory contents, download files, and delete files.
-- **Access permissions:** Store a user's access level for a directory using `READ`, `WRITE`, or `NONE`.
-- **Activity logging:** Record file actions such as uploads, downloads, and deletions.
-- **REST API:** Expose functionality through Spring MVC controllers.
-- **API documentation:** Includes Springdoc OpenAPI / Swagger UI dependency.
-- **Persistence:** Uses Spring Data JPA with PostgreSQL for relational entities and Spring Data MongoDB for activity logs.
+- Create, retrieve, and delete users
+- Create, list, and delete user-owned directories
+- Upload, list, download, and delete files
+- Store per-user, per-directory permission values: `READ`, `WRITE`, or `NONE`
+- Record upload, download, and delete events in MongoDB
+- Explore the API through generated OpenAPI documentation and Swagger UI
 
-> **Note:** This repository is a backend API project. It does not currently include a dedicated frontend interface.
+This repository provides a backend API; it does not include a separate frontend.
 
-## 🛠️ Tech Stack
+## Technology
 
-- **Language:** Java 17
-- **Framework:** Spring Boot 3.4.4
-- **Web layer:** Spring Web (REST controllers)
-- **Relational persistence:** Spring Data JPA, Hibernate, PostgreSQL
-- **Activity logs:** Spring Data MongoDB
-- **Validation:** Spring Boot Validation
-- **API documentation:** Springdoc OpenAPI / Swagger UI
-- **Build tool:** Maven
-- **Boilerplate reduction:** Lombok
+| Area | Tools |
+|---|---|
+| Language | Java 17 |
+| Application framework | Spring Boot 3.4.4, Spring MVC |
+| Relational persistence | Spring Data JPA, Hibernate, PostgreSQL |
+| Activity events | Spring Data MongoDB, MongoDB |
+| API documentation | Springdoc OpenAPI 2.3.0 |
+| Validation | Spring Boot Validation |
+| Build | Maven Wrapper |
+| Other | Lombok |
 
-## 🧱 Architecture
+## Architecture
 
-The application follows a layered structure:
+The code is organized into controllers, services, repositories, and models under `src/main/java/ir/hamtasharif/filemanager/`.
 
-- **Controller:** Defines REST endpoints and HTTP responses.
-- **Service:** Implements user, directory, permission, file, and activity-log operations.
-- **Repository:** Uses Spring Data repositories to interact with the databases.
-- **Model:** Defines the main entities and activity-log document.
+- **Controllers** expose the REST endpoints.
+- **Services** implement user, directory, file, permission-record, and activity-log operations.
+- **Repositories** use Spring Data JPA or MongoDB.
+- **Storage** keeps uploaded file bytes on disk at `<working-directory>/uploads/<directory-id>/`; file metadata is stored in PostgreSQL, and activity events are stored in MongoDB.
 
-Uploaded files are stored on the local filesystem under the repository's `uploads/` directory, organized by directory ID. File metadata is stored in the relational database, while activity logs are stored in MongoDB.
-
-## 📂 Project Structure
-
-```text
-basic_filemanager/
-├── pom.xml
-├── mvnw
-├── mvnw.cmd
-├── .mvn/
-└── src/
-    ├── main/
-    │   ├── java/ir/hamtasharif/filemanager/
-    │   │   ├── FilemanagerApplication.java
-    │   │   ├── controller/
-    │   │   │   ├── UserController.java
-    │   │   │   ├── DirectoryController.java
-    │   │   │   ├── StoredFileController.java
-    │   │   │   └── PermissionController.java
-    │   │   ├── model/
-    │   │   ├── repository/
-    │   │   └── service/
-    │   └── resources/
-    │       └── application.properties
-    └── test/
-```
-
-## 🚀 Getting Started
+## Getting started
 
 ### Prerequisites
 
-Before running the application, install or prepare:
-
-- **JDK 17**
-- **PostgreSQL**
-- **MongoDB**
-- Git (optional, for cloning the repository)
+- JDK 17
+- PostgreSQL
+- MongoDB
+- Git
 
 ### 1. Clone the repository
 
@@ -81,25 +51,45 @@ git clone https://github.com/niusha-adib20/basic_filemanager.git
 cd basic_filemanager
 ```
 
-### 2. Configure the databases
+### 2. Create the PostgreSQL database
 
-The current configuration expects a PostgreSQL database named `filemanager` and a MongoDB database also named `filemanager`, both running locally with their default ports.
-
-Create the PostgreSQL database if it does not already exist:
+Start PostgreSQL and create a database named `filemanager`:
 
 ```sql
 CREATE DATABASE filemanager;
 ```
 
-Configure database URLs and credentials for your local environment. **Do not commit real passwords or production credentials to source control.** Prefer environment variables or an external configuration file for secrets.
+Start MongoDB as well. The default MongoDB URI targets `mongodb://localhost:27017/filemanager`.
 
-The application uses PostgreSQL for JPA-managed entities and MongoDB for activity logs. Both services should be available before starting the app.
+### 3. Configure database access
 
-### 3. Run the application
+The application reads Spring Boot configuration properties. Set environment variables for your own local database settings before starting it. These values override the corresponding values in `src/main/resources/application.properties`.
 
-You can use the Maven Wrapper included in the repository.
+**Windows PowerShell:**
 
-**Windows (Command Prompt / PowerShell):**
+```powershell
+$env:SPRING_DATASOURCE_URL = "jdbc:postgresql://localhost:5432/filemanager"
+$env:SPRING_DATASOURCE_USERNAME = "your-postgres-username"
+$env:SPRING_DATASOURCE_PASSWORD = "your-local-password"
+$env:SPRING_DATA_MONGODB_URI = "mongodb://localhost:27017/filemanager"
+```
+
+**macOS / Linux:**
+
+```bash
+export SPRING_DATASOURCE_URL="jdbc:postgresql://localhost:5432/filemanager"
+export SPRING_DATASOURCE_USERNAME="your-postgres-username"
+export SPRING_DATASOURCE_PASSWORD="your-local-password"
+export SPRING_DATA_MONGODB_URI="mongodb://localhost:27017/filemanager"
+```
+
+Use credentials appropriate for your local environment. Do not commit passwords, tokens, or production credentials.
+
+### 4. Run the application
+
+The Maven Wrapper is included, so a separate Maven installation is not required.
+
+**Windows (PowerShell or Command Prompt):**
 
 ```powershell
 .\mvnw.cmd spring-boot:run
@@ -112,23 +102,16 @@ chmod +x mvnw
 ./mvnw spring-boot:run
 ```
 
-Alternatively, if Maven is installed:
+When startup completes, the API is available at [http://localhost:8080](http://localhost:8080). Spring Boot's default port is used unless overridden.
 
-```bash
-mvn spring-boot:run
-```
+## API documentation
 
-When the application starts successfully, the API is available at:
+With the application running, open:
 
-```text
-http://localhost:8080
-```
+- [Swagger UI](http://localhost:8080/swagger-ui/index.html)
+- [OpenAPI JSON](http://localhost:8080/v3/api-docs)
 
-The project does not explicitly set a server port in its application properties, so Spring Boot's default port is used unless overridden.
-
-## 🔌 REST API Reference
-
-The following endpoints are defined by the current controllers.
+## REST endpoints
 
 ### Users
 
@@ -138,53 +121,47 @@ The following endpoints are defined by the current controllers.
 | GET | `/users/{username}` | Retrieve a user by username |
 | DELETE | `/users/{id}` | Delete a user by ID |
 
-Example — create a user:
+Create a user:
 
 ```bash
 curl -X POST http://localhost:8080/users \
   -H "Content-Type: application/json" \
-  -d '{
-    "username": "alice",
-    "password": "change-me"
-  }'
+  -d '{"username":"alice","password":"use-a-local-test-password"}'
 ```
 
 ### Directories
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/directories/{username}` | Create a directory owned by the specified user |
-| GET | `/directories/{username}` | List directories owned by the specified user |
+| POST | `/directories/{username}` | Create a directory for a user |
+| GET | `/directories/{username}` | List a user's directories |
 | DELETE | `/directories/{id}` | Delete a directory by ID |
 
-Example — create a directory:
+Create a directory:
 
 ```bash
 curl -X POST http://localhost:8080/directories/alice \
   -H "Content-Type: application/json" \
-  -d '{
-    "name": "Documents",
-    "path": "Documents"
-  }'
+  -d '{"name":"Documents","path":"Documents"}'
 ```
 
 ### Files
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/files/upload/{directoryId}` | Upload a file as multipart form data using the `file` field |
-| GET | `/files/list/{directoryId}` | List files belonging to a directory |
+| POST | `/files/upload/{directoryId}` | Upload multipart form data using the `file` field |
+| GET | `/files/list/{directoryId}` | List file metadata for a directory |
 | GET | `/files/download/{username}/{fileId}` | Download a file by ID |
 | DELETE | `/files/{fileId}` | Delete a file by ID |
 
-Example — upload a file:
+Upload a file:
 
 ```bash
 curl -X POST http://localhost:8080/files/upload/1 \
   -F "file=@./example.txt"
 ```
 
-Example — list files in a directory:
+List files:
 
 ```bash
 curl http://localhost:8080/files/list/1
@@ -194,67 +171,46 @@ curl http://localhost:8080/files/list/1
 
 | Method | Endpoint | Description |
 |---|---|---|
-| POST | `/permissions/{username}/{directoryId}?accessType={type}` | Create or update a user's directory permission |
-| GET | `/permissions/{username}/{directoryId}` | Retrieve the user's permission for a directory |
+| POST | `/permissions/{username}/{directoryId}?accessType={type}` | Create or update a permission record |
+| GET | `/permissions/{username}/{directoryId}` | Read a user's permission value |
 
-Supported `accessType` values:
+Supported values are `READ`, `WRITE`, and `NONE`.
 
-- `READ`
-- `WRITE`
-- `NONE`
-
-Example — set a permission:
+For example:
 
 ```bash
 curl -X POST "http://localhost:8080/permissions/alice/1?accessType=READ"
 ```
 
-### API documentation
+Permission records are currently stored and retrievable through these endpoints. They are not yet enforced as authorization checks on file or directory operations.
 
-Springdoc OpenAPI is included in the project. When the application is running, try:
+## Tests
 
-- Swagger UI: [http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html)
-- OpenAPI JSON: [http://localhost:8080/v3/api-docs](http://localhost:8080/v3/api-docs)
+Run the project tests with the Maven Wrapper:
 
-## 🗃️ Data Models
-
-The main application models are:
-
-- **User:** Stores a username and password, and owns directories.
-- **Directory:** Represents a user-owned directory and its associated files.
-- **StoredFile:** Stores file metadata such as name, content type, filesystem path, size, and directory.
-- **Permission:** Associates a user and directory with an access type.
-- **ActivityLog:** Stores a username, action, details, and timestamp in MongoDB.
-
-## ⚠️ Important Notes
-
-- **Authentication and authorization:** The current controllers do not show a complete authentication flow. Permission records exist, but access checks must be enforced consistently before using this as a multi-user or production service.
-- **Password handling:** The current user model includes a password field. For a real deployment, passwords must be securely hashed and never returned in API responses.
-- **File safety:** Validate uploaded filenames and content, enforce file-size limits, and prevent path traversal before exposing the service to untrusted users.
-- **Database credentials:** Keep passwords and secrets outside committed configuration files.
-- **Data storage:** Files are stored locally; a production deployment should plan for backups, storage permissions, and cleanup consistency between files and database metadata.
-- **Activity logs:** Upload, download, and delete events are recorded in MongoDB.
-- **Testing:** A Spring Boot test source is included. Run the test suite with the Maven Wrapper:
-
-```bash
-./mvnw test
-```
-
-On Windows:
+**Windows:**
 
 ```powershell
 .\mvnw.cmd test
 ```
 
-## 📚 References
+**macOS / Linux:**
 
-- [Spring Boot Documentation](https://docs.spring.io/spring-boot/index.html)
-- [Spring Web MVC](https://docs.spring.io/spring-framework/reference/web/webmvc.html)
-- [Spring Data JPA](https://docs.spring.io/spring-data/jpa/reference/)
-- [Spring Data MongoDB](https://docs.spring.io/spring-data/mongodb/reference/)
-- [Springdoc OpenAPI](https://springdoc.org/)
-- [PostgreSQL Documentation](https://www.postgresql.org/docs/)
+```bash
+./mvnw test
+```
 
----
+## Current scope and security considerations
 
-Built with Java and Spring Boot. ☕
+This project is a backend learning/prototype project and should not be exposed to untrusted users without additional security work:
+
+- The current API does not implement an authentication flow or consistently enforce authorization.
+- Permission endpoints manage permission records, but file and directory endpoints do not apply those records as access-control checks.
+- Passwords are currently handled as plain values by the user model/API. A real service must hash passwords and must never return them in API responses.
+- Uploaded filenames and file sizes need stronger validation and limits before accepting untrusted uploads.
+- Uploaded files are stored on the local filesystem, so deployment needs appropriate storage permissions, backups, and cleanup behavior.
+- The current JPA schema setting uses `ddl-auto=update`, which is convenient for development but should be replaced with controlled migrations for production.
+
+## License
+
+No license file is currently included. Add a license file before redistributing this project under open-source terms.
